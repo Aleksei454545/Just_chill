@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Blackjack Rogue: Inline Joker Sell Button</title>
+    <style>
+        :root {
+            --bg-color: #2c3e50;
+            --felt-color: #27ae60;
+            --card-bg: #ecf0f1;
+            --accent: #e74c3c;
+            --chips: #3498db;
+            --gold: #f1c40f;
+            --text: #fff;
+            --dark-panel: rgba(0,0,0,0.6);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- UI Layout --- */
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--felt-color);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        header {
+            padding: 15px;
+            background: var(--dark-panel);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e8449;
+        }
+
+        .stats-group { display: flex; gap: 20px; }
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-label { font-size: 0.8rem; color: #aaa; text-transform: uppercase; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; }
+
+        /* --- Jokers Area --- */
+        #jokers-area {
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .joker-card-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .joker-card {
+            width: 70px;
+            height: 95px;
+            background: linear-gradient(135deg, var(--gold), #d4ac0d);
+            color: #000;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4px;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative; 
+        }
+        
+        /* Кнопка продажи под джокером */
+        .joker-sell-btn {
+            background: #c0392b;
+            color: white;
+            border: none;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 0 0 4px 4px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            margin-top: 5px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            width: 100%;
+            transform: translateY(0);
+        }
+
+        /* Анимация выбора и показ кнопки */
+        .joker-card-wrapper.selected-joker .joker-card {
+            transform: translateY(-10px) scale(1.1);
+            border-color: var(--accent);
+            box-shadow: 0 8px 15px rgba(231, 76, 60, 0.7);
+        }
+
+        .joker-card-wrapper.selected-joker .joker-sell-btn {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(-10px); /* Поднимаем вместе с картой */
+        }
+        
+        .joker-card-wrapper.dragging .joker-card {
+            opacity: 0.5;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+            cursor: grabbing;
+        }
+
+        .joker-name { font-weight: bold; font-size: 0.7rem; margin-bottom: 5px; line-height: 1; }
+        .joker-desc { font-size: 0.6rem; line-height: 1.1; }
+
+        /* --- Play Area --- */
+        #table-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #score-panel {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--dark-panel);
+            padding: 15px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px solid #fff;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .score-part { display: flex; flex-direction: column; align-items: center; }
+        .score-box {
+            font-size: 2.5rem;
+            font-weight: 900;
+            padding: 5px 15px;
+            border-radius: 8px;
+            min-width: 60px;
+            text-align: center;
+        }
+        .box-blue { background: var(--chips); color: white; text-shadow: 2px 2px 0 #000; }
+        .box-red { background: var(--accent); color: white; text-shadow: 2px 2px 0 #000; }
+        .score-label { font-size: 0.8rem; margin-top: 5px; text-transform: uppercase; }
+        .operator { font-size: 2rem; color: #aaa; font-weight: bold; }
+        #total-calc { font-size: 1.5rem; color: var(--gold); margin-left: 15px; font-weight: bold; }
+
+        #cards-container {
+            display: flex;
+            justify-content: center;
+            min-height: 150px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            width: 100px;
+            height: 140px;
+            background: var(--card-bg);
+            color: #000;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            box-shadow: -5px 5px 15px rgba(0,0,0,0.3);
+            font-weight: bold;
+            font-size: 1.5rem;
+            position: relative;
+            margin-left: -40px;
+            transition: transform 0.3s;
+        }
+        .card:first-child { margin-left: 0; }
+        .card:hover { transform: translateY(-20px) rotate(2deg); margin-right: 20px; z-index: 5; }
+        .card.red { color: var(--accent); }
+        .card.black { color: #2c3e50; }
+        .card-suit-center {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem; opacity: 0.15;
+        }
+
+        #message-area {
+            height: 30px; font-size: 1.5rem; font-weight: bold;
+            text-shadow: 1px 1px 2px #000; margin-bottom: 10px;
+        }
+
+        #controls {
+            padding: 20px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 20px;
+            background: var(--dark-panel);
+            position: relative;
+        }
+        
+        button {
+            padding: 15px 40px; font-size: 1.2rem; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; text-transform: uppercase;
+            transition: all 0.2s; box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+        }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { filter: grayscale(1); cursor: not-allowed; opacity: 0.6; }
+
+        .btn-hit { background: var(--chips); color: white; }
+        .btn-stand { background: var(--gold); color: #000; }
+        .btn-shop { background: #9b59b6; color: white; display: none; width: 100%; }
+
+        /* --- Shop Overlay --- */
+        #shop-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; flex-direction: column; align-items: center; padding-top: 20px;
+            overflow-y: auto;
+        }
+        .shop-header { text-align: center; margin-bottom: 20px; }
+        .shop-header h1 { margin: 0; font-size: 3rem; color: var(--gold); }
+        .shop-balance { font-size: 1.5rem; color: var(--text); margin-top: 10px; }
+        
+        #shop-jokers-area {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px 0 50px 0;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        #shop-jokers-area .joker-card-wrapper {
+             /* Сбрасываем трансформацию, чтобы они ровно стояли в магазине */
+            transform: none !important; 
+        }
+
+        #shop-jokers-area .joker-card-wrapper.selected-joker .joker-card {
+            transform: translateY(-10px) scale(1.1) !important;
+        }
+        
+        #shop-jokers-area .joker-card-wrapper.selected-joker .joker-sell-btn {
+             transform: translateY(-10px) !important;
+        }
+        
+        .shop-shelf { display: flex; gap: 30px; margin-bottom: 50px; }
+        
+        .shop-item {
+            width: 140px; height: 200px; background: var(--card-bg);
+            border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; text-align: center; padding: 10px;
+            cursor: pointer; transition: transform 0.2s;
+            border: 4px solid var(--gold);
+        }
+        .shop-item:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--gold); }
+        .shop-item-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; color: #000; }
+        .shop-tag { background: #000; color: #fff; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-top: 10px; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <header>
+        <div class="stats-group">
+            <div class="stat-box">
+                <span class="stat-label">Раунд</span>
+                <span class="stat-value" id="round-num">1</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Руки</span>
+                <span class="stat-value" id="hands-left">4</span>
+            </div>
+        </div>
+        
+        <div class="stat-box" style="border-color: var(--accent);">
+            <span class="stat-label" style="color: var(--accent);">Цель</span>
+            <span class="stat-value" id="target-score">50</span>
+        </div>
+
+        <div class="stats-group">
+            <div class="stat-box" style="border-color: var(--gold);">
+                <span class="stat-label" style="color: var(--gold);">Деньги</span>
+                <span class="stat-value">$<span id="money">0</span></span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-label">Счет</span>
+                <span class="stat-value" id="current-score">0</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="jokers-area">
+        </div>
+
+    <div id="table-area">
+        <div id="score-panel">
+            <div class="score-part">
+                <div class="score-box box-blue" id="hand-chips">0</div>
+                <span class="score-label" style="color: var(--chips);">Сумма</span>
+            </div>
+            <span class="operator">X</span>
+            <div class="score-part">
+                <div class="score-box box-red" id="hand-mult">1</div>
+                <span class="score-label" style="color: var(--accent);">Мульти</span>
+            </div>
+            <span class="operator">=</span>
+            <div id="total-calc">0</div>
+        </div>
+
+        <div id="message-area"></div>
+
+        <div id="cards-container"></div>
+    </div>
+
+    <div id="controls">
+        <button class="btn-hit" onclick="game.hit()">ВЗЯТЬ КАРТУ</button>
+        <button class="btn-stand" onclick="game.stand()">ИГРАТЬ РУКУ</button>
+        <button class="btn-shop" id="go-shop-btn" onclick="game.openShop()">В МАГАЗИН</button>
+    </div>
+
+    <div id="shop-overlay">
+        <div class="shop-header">
+            <h1>МАГАЗИН</h1>
+            <div class="shop-balance">Баланс: $<span id="shop-money">0</span></div>
+        </div>
+        
+        <div id="shop-jokers-area">
+            </div>
+
+        <div class="shop-shelf" id="shop-container"></div>
+        <button class="btn-hit" onclick="game.nextRound()" style="padding: 20px 60px; font-size: 1.5rem; margin-bottom: 20px;">СЛЕДУЮЩИЙ РАУНД</button>
+    </div>
+</div>
+
+<script>
+    const SUITS = ['♠', '♥', '♦', '♣'];
+    const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+    const JOKER_DB = [
+        { id: 'evener', name: 'Четный', desc: '+10 Множитель если все карты четные', price: 4 },
+        { id: 'odder', name: 'Нечетный', desc: '+10 Множитель если все карты нечетные', price: 4 },
+        { id: 'red_baron', name: 'Красный Барон', desc: '+3 Множитель за каждую Красную', price: 6 },
+        { id: 'dark_knight', name: 'Рыцарь Тьмы', desc: '+3 Множитель за каждую Черную', price: 6 },
+        { id: 'face_master', name: 'Лицедей', desc: 'x2 Множитель если есть J, Q или K', price: 8 },
+        { id: 'lucky_seven', name: 'Счастливая 7', desc: '+15 Множитель если есть Семерка', price: 5 },
+        { id: 'safe_play', name: 'Сейв', desc: '+8 Множитель если сумма карт < 15', price: 4 },
+        { id: 'blackjack_pro', name: 'Профи 21', desc: 'x3 Множитель если сумма ровно 21', price: 10 },
+        { id: 'pair_bonus', name: 'Парочка', desc: '+5 Множитель если есть пара', price: 5 },
+        { id: 'starter', name: 'Новичок', desc: '+4 Множитель пассивно', price: 2 }
+    ];
+
+    class Card {
+        constructor(suit, rank) {
+            this.suit = suit;
+            this.rank = rank;
+            this.isRed = (suit === '♥' || suit === '♦');
+        }
+        getValue() {
+            if (['J', 'Q', 'K'].includes(this.rank)) return 10;
+            if (this.rank === 'A') return 11; 
+            return parseInt(this.rank);
+        }
+        getHTML() {
+            return `
+                <div class="card ${this.isRed ? 'red' : 'black'}">
+                    <div style="font-size:1rem;">${this.rank}${this.suit}</div>
+                    <div class="card-suit-center">${this.suit}</div>
+                    <div style="transform: rotate(180deg); font-size:1rem;">${this.rank}${this.suit}</div>
+                </div>
+            `;
+        }
+    }
+
+    class Game {
+        constructor() {
+            this.deck = [];
+            this.hand = [];
+            this.jokers = [];
+            this.round = 1;
+            this.targetScore = 50; 
+            this.handsLeft = 4;
+            this.money = 0;
+            this.currentRoundScore = 0;
+            this.draggedJokerIndex = null;
+            this.selectedJokerIndex = null;
+            this.inShopMode = false;
+
+            this.ui = {
+                cards: document.getElementById('cards-container'),
+                chips: document.getElementById('hand-chips'),
+                mult: document.getElementById('hand-mult'),
+                totalCalc: document.getElementById('total-calc'),
+                score: document.getElementById('current-score'),
+                target: document.getElementById('target-score'),
+                handsLeft: document.getElementById('hands-left'),
+                money: document.getElementById('money'),
+                shopMoney: document.getElementById('shop-money'),
+                msg: document.getElementById('message-area'),
+                round: document.getElementById('round-num'),
+                jokers: document.getElementById('jokers-area'), 
+                shopJokers: document.getElementById('shop-jokers-area'), 
+                shop: document.getElementById('shop-overlay'),
+                shopContainer: document.getElementById('shop-container'),
+                goShopBtn: document.getElementById('go-shop-btn'),
+                hitBtn: document.querySelector('.btn-hit'),
+                standBtn: document.querySelector('.btn-stand'),
+                // sellControl: document.getElementById('sell-control'), // Удалено
+                // sellPriceDisplay: document.getElementById('sell-price-display') // Удалено
+            };
+
+            this.initDeck();
+            this.renderJokers();
+            this.startRound();
+
+            // Обработчик для снятия выделения, если кликнули вне джокера
+            document.addEventListener('click', (e) => {
+                const isJoker = e.target.closest('.joker-card-wrapper');
+                // Кликнули вне джокеров и что-то было выбрано
+                if (!isJoker && this.selectedJokerIndex !== null) {
+                    this.unselectJoker();
+                }
+            });
+        }
+        
+        // --- Game Logic (сокращены, так как они не менялись) ---
+
+        initDeck() {
+            this.deck = [];
+            for (let s of SUITS) {
+                for (let r of RANKS) {
+                    this.deck.push(new Card(s, r));
+                }
+            }
+            this.shuffle();
+        }
+
+        shuffle() {
+            for (let i = this.deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+            }
+        }
+
+        startRound() {
+            this.currentRoundScore = 0;
+            this.handsLeft = 4;
+            this.unselectJoker();
+            this.updateUI();
+            this.resetHand();
+        }
+
+        resetHand() {
+            this.hand = [];
+            this.ui.cards.innerHTML = '';
+            this.ui.msg.innerText = '';
+            this.toggleButtons(true);
+            this.dealCard();
+            setTimeout(() => this.dealCard(), 300);
+        }
+
+        dealCard() {
+            if (this.deck.length === 0) this.initDeck();
+            const card = this.deck.pop();
+            this.hand.push(card);
+            this.render();
+            this.checkInstantBust();
+        }
+
+        hit() { this.dealCard(); }
+
+        calculateStats() {
+            let sum = 0;
+            let aces = 0;
+            for (let c of this.hand) {
+                sum += c.getValue();
+                if (c.rank === 'A') aces++;
+            }
+            while (sum > 21 && aces > 0) { sum -= 10; aces--; }
+
+            let mult = 1; 
+            
+            this.jokers.forEach(j => {
+                if (j.id === 'starter') mult += 4;
+                if (j.id === 'red_baron') mult += (this.hand.filter(c => c.isRed).length * 3);
+                if (j.id === 'dark_knight') mult += (this.hand.filter(c => !c.isRed).length * 3);
+                if (j.id === 'evener' && this.hand.length > 0 && this.hand.every(c => ['2','4','6','8','10','Q'].includes(c.rank))) mult += 10;
+                if (j.id === 'odder' && this.hand.length > 0 && this.hand.every(c => ['3','5','7','9','A','J','K'].includes(c.rank))) mult += 10;
+                if (j.id === 'lucky_seven' && this.hand.some(c => c.rank === '7')) mult += 15;
+                if (j.id === 'pair_bonus') {
+                    const ranks = this.hand.map(c => c.rank);
+                    if (new Set(ranks).size !== ranks.length) mult += 5; 
+                }
+                if (j.id === 'safe_play' && sum < 15) mult += 8;
+                if (j.id === 'face_master' && this.hand.some(c => ['J','Q','K'].includes(c.rank))) mult *= 2;
+                if (j.id === 'blackjack_pro' && sum === 21) mult *= 3;
+            });
+
+            return { chips: sum, mult: mult, total: sum * mult };
+        }
+
+        render() {
+            this.ui.cards.innerHTML = this.hand.map(c => c.getHTML()).join('');
+            const stats = this.calculateStats();
+            this.ui.chips.innerText = stats.chips;
+            this.ui.mult.innerText = stats.mult;
+            this.ui.totalCalc.innerText = stats.total;
+            
+            if (stats.chips > 21) {
+                this.ui.chips.style.backgroundColor = 'red';
+                this.ui.msg.innerText = "ПЕРЕБОР!";
+                this.ui.msg.style.color = 'red';
+            } else {
+                this.ui.chips.style.backgroundColor = 'var(--chips)';
+                this.ui.msg.innerText = "";
+            }
+        }
+
+        checkInstantBust() {
+            const stats = this.calculateStats();
+            if (stats.chips > 21) {
+                this.toggleButtons(false);
+                setTimeout(() => this.resolveHand(true), 1000);
+            }
+        }
+
+        stand() { this.resolveHand(false); }
+
+        resolveHand(isBust) {
+            this.toggleButtons(false);
+            if (isBust) {
+                this.ui.msg.innerText = "СГОРЕЛО";
+            } else {
+                const stats = this.calculateStats();
+                this.currentRoundScore += stats.total;
+                this.money += Math.floor(stats.total / 10);
+                this.ui.msg.innerText = `+${stats.total} Очков!`;
+                this.ui.msg.style.color = 'var(--gold)';
+            }
+            this.handsLeft--;
+            this.updateUI();
+
+            if (this.currentRoundScore >= this.targetScore) {
+                setTimeout(() => this.winRound(), 1000);
+            } else if (this.handsLeft <= 0) {
+                setTimeout(() => this.gameOver(), 1000);
+            } else {
+                setTimeout(() => this.resetHand(), 1500);
+            }
+        }
+
+        winRound() {
+            this.ui.msg.innerText = "ПОБЕДА! В МАГАЗИН...";
+            this.ui.msg.style.color = 'var(--gold)'; 
+            
+            this.ui.goShopBtn.style.display = 'inline-block';
+            this.ui.hitBtn.style.display = 'none';
+            this.ui.standBtn.style.display = 'none';
+            
+            this.money += 10;
+            this.updateUI();
+        }
+
+        gameOver() {
+            this.ui.msg.innerText = "GAME OVER. F5 для рестарта";
+            this.ui.msg.style.color = 'red';
+        }
+
+        /* --- JOKER INTERACTION --- */
+
+        selectJoker(index) {
+            // Если выбран тот же джокер, то отменяем выбор
+            if (this.selectedJokerIndex === index) {
+                this.unselectJoker();
+                return;
+            }
+
+            this.unselectJoker(); // Снимаем выделение с предыдущего
+            this.selectedJokerIndex = index;
+            
+            const container = this.inShopMode ? this.ui.shopJokers : this.ui.jokers;
+            const jokerWrapper = container.children[index];
+
+            if (jokerWrapper) {
+                jokerWrapper.classList.add('selected-joker');
+                
+                // Обновляем текст на кнопке продажи
+                const joker = this.jokers[index];
+                const sellPrice = Math.floor(joker.price / 2);
+                const sellBtn = jokerWrapper.querySelector('.joker-sell-btn');
+                sellBtn.innerHTML = `ПРОДАТЬ $${sellPrice}`;
+            }
+        }
+
+        unselectJoker() {
+            if (this.selectedJokerIndex !== null) {
+                const container = this.inShopMode ? this.ui.shopJokers : this.ui.jokers;
+                const prevWrapper = container.children[this.selectedJokerIndex];
+
+                if (prevWrapper) {
+                    prevWrapper.classList.remove('selected-joker');
+                }
+                this.selectedJokerIndex = null;
+            }
+        }
+
+        sellSelectedJoker(event) {
+            // Предотвращаем клик, который может попасть на unselectJoker
+            event.stopPropagation();
+            
+            if (this.selectedJokerIndex !== null) {
+                this.sellJoker(this.selectedJokerIndex);
+            }
+        }
+
+        sellJoker(index) {
+            const joker = this.jokers[index];
+            const sellPrice = Math.floor(joker.price / 2);
+            this.money += sellPrice;
+            this.jokers.splice(index, 1);
+            
+            // Перерисовка
+            if (this.inShopMode) {
+                this.renderShopJokerArea();
+            } else {
+                this.renderJokers();
+            }
+
+            this.unselectJoker();
+            this.updateUI();
+            this.render(); 
+        }
+        
+        // --- Drag and Drop (Только для игрового режима) ---
+        
+        handleDragStart(event, index) {
+            if (this.inShopMode) return; 
+            
+            this.unselectJoker(); 
+            
+            this.draggedJokerIndex = index;
+            event.dataTransfer.setData('text/plain', index);
+            setTimeout(() => {
+                event.target.classList.add('dragging');
+            }, 0);
+        }
+
+        handleDragOver(event) {
+            if (this.inShopMode) return;
+            event.preventDefault(); 
+        }
+
+        handleDrop(event, targetIndex) {
+            if (this.inShopMode) return;
+            event.preventDefault();
+            const draggedIndex = this.draggedJokerIndex;
+            
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                this.reorderJokers(draggedIndex, targetIndex);
+            }
+            
+            event.target.closest('.joker-card-wrapper').classList.remove('dragging');
+        }
+        
+        handleDragEnd(event) {
+             if (this.inShopMode) return;
+             event.target.classList.remove('dragging');
+             this.draggedJokerIndex = null;
+        }
+
+        reorderJokers(fromIndex, toIndex) {
+            const jokerToMove = this.jokers.splice(fromIndex, 1)[0];
+            this.jokers.splice(toIndex, 0, jokerToMove);
+            
+            this.renderJokers(); 
+            this.render(); 
+        }
+
+        // Рендеринг джокеров в игровом режиме
+        renderJokers() {
+            this.ui.jokers.innerHTML = '';
+            
+            if (this.jokers.length === 0) {
+                this.ui.jokers.innerHTML = '<div style="opacity: 0.5;">Нет Джокеров. Кликните, чтобы выбрать, или перетащите для смены порядка.</div>';
+                this.unselectJoker();
+                return;
+            }
+            
+            this.jokers.forEach((j, index) => {
+                const div = this._createJokerCardElement(j, index, true);
+                this.ui.jokers.appendChild(div);
+            });
+        }
+
+        // Рендеринг джокеров в режиме магазина
+        renderShopJokerArea() {
+            this.ui.shopJokers.innerHTML = '';
+            
+            if (this.jokers.length === 0) {
+                this.ui.shopJokers.innerHTML = '<div style="opacity: 0.5;">Нет купленных Джокеров.</div>';
+                this.unselectJoker();
+                return;
+            }
+
+            this.jokers.forEach((j, index) => {
+                // В магазине перетаскивание отключено (draggable=false)
+                const div = this._createJokerCardElement(j, index, false); 
+                this.ui.shopJokers.appendChild(div);
+            });
+        }
+
+        // Вспомогательная функция для создания DOM элемента джокера
+        _createJokerCardElement(joker, index, isDraggable) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'joker-card-wrapper';
+            
+            // Если этот джокер был выбран, восстанавливаем класс
+            if (this.selectedJokerIndex === index) {
+                wrapper.classList.add('selected-joker');
+            }
+            
+            // Настройка для Drag and Drop
+            wrapper.setAttribute('draggable', isDraggable ? 'true' : 'false');
+            wrapper.setAttribute('data-index', index);
+            
+            // Обработчики на обертке
+            wrapper.onclick = (e) => {
+                e.stopPropagation(); 
+                this.selectJoker(index);
+            };
+
+            if (isDraggable) {
+                wrapper.ondragstart = (e) => this.handleDragStart(e, index);
+                wrapper.ondragover = (e) => this.handleDragOver(e);
+                wrapper.ondrop = (e) => this.handleDrop(e, index);
+                wrapper.ondragend = (e) => this.handleDragEnd(e);
+            }
+            
+            // Создание самой карты
+            const card = document.createElement('div');
+            card.className = 'joker-card';
+            card.innerHTML = `
+                <div class="joker-name">${joker.name}</div>
+                <div class="joker-desc">${joker.desc}</div>
+            `;
+            
+            // Создание кнопки продажи
+            const sellPrice = Math.floor(joker.price / 2);
+            const sellBtn = document.createElement('button');
+            sellBtn.className = 'joker-sell-btn';
+            sellBtn.innerHTML = `ПРОДАТЬ $${sellPrice}`;
+            sellBtn.onclick = (e) => this.sellSelectedJoker(e); // Вызываем продажу при клике
+
+            wrapper.appendChild(card);
+            wrapper.appendChild(sellBtn);
+            
+            return wrapper;
+        }
+
+
+        /* --- SHOP MANAGEMENT --- */
+
+        openShop() {
+            this.inShopMode = true;
+            this.unselectJoker(); 
+            this.ui.shop.style.display = 'flex';
+            this.ui.shopMoney.innerText = this.money;
+            this.generateShopItems();
+            this.renderShopJokerArea(); 
+        }
+
+        nextRound() {
+            this.inShopMode = false;
+            this.round++;
+            this.targetScore = Math.floor(this.targetScore * 1.8) + 50; 
+            this.ui.shop.style.display = 'none';
+            this.ui.goShopBtn.style.display = 'none';
+            this.startRound();
+        }
+
+        generateShopItems() {
+            this.ui.shopContainer.innerHTML = '';
+            const items = JOKER_DB.sort(() => 0.5 - Math.random()).slice(0, 3);
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'shop-item';
+                el.innerHTML = `
+                    <div class="shop-item-content">
+                        <div style="font-weight:bold; font-size:1.1rem; margin-bottom:5px;">${item.name}</div>
+                        <div style="font-size:0.8rem; line-height:1.2;">${item.desc}</div>
+                    </div>
+                    <div class="shop-tag">$${item.price}</div>
+                `;
+                el.onclick = () => this.buyJoker(item, el);
+                this.ui.shopContainer.appendChild(el);
+            });
+        }
+
+        buyJoker(item, element) {
+            if (this.money >= item.price && this.jokers.length < 5) {
+                this.money -= item.price;
+                this.jokers.push(item);
+                this.renderJokers();
+                this.renderShopJokerArea(); 
+                
+                element.style.borderColor = '#ccc';
+                element.style.opacity = '0.3';
+                element.style.pointerEvents = 'none';
+                element.innerHTML = '<div class="shop-item-content"><strong>КУПЛЕНО</strong></div>';
+                this.updateUI();
+            } else {
+                element.style.borderColor = 'red';
+                setTimeout(() => element.style.borderColor = 'var(--gold)', 300);
+            }
+        }
+
+
+        updateUI() {
+            this.ui.round.innerText = this.round;
+            this.ui.target.innerText = this.targetScore;
+            this.ui.score.innerText = this.currentRoundScore;
+            this.ui.handsLeft.innerText = this.handsLeft;
+            this.ui.money.innerText = this.money;
+            this.ui.shopMoney.innerText = this.money;
+            
+            if (this.currentRoundScore >= this.targetScore && this.ui.shop.style.display !== 'flex') {
+                this.ui.goShopBtn.style.display = 'inline-block';
+                this.ui.hitBtn.style.display = 'none';
+                this.ui.standBtn.style.display = 'none';
+            }
+        }
+
+        toggleButtons(enable) {
+            if (this.currentRoundScore >= this.targetScore) {
+                this.ui.hitBtn.style.display = 'none';
+                this.ui.standBtn.style.display = 'none';
+                this.ui.goShopBtn.style.display = 'inline-block';
+                return; 
+            }
+            
+            this.ui.hitBtn.disabled = !enable;
+            this.ui.standBtn.disabled = !enable;
+            this.ui.goShopBtn.style.display = 'none';
+
+            this.ui.hitBtn.style.display = enable ? 'inline-block' : 'inline-block';
+            this.ui.standBtn.style.display = enable ? 'inline-block' : 'inline-block';
+            
+            if(!enable) {
+               this.ui.hitBtn.style.opacity = 0.5;
+               this.ui.standBtn.style.opacity = 0.5;
+            } else {
+               this.ui.hitBtn.style.opacity = 1;
+               this.ui.standBtn.style.opacity = 1; 
+            }
+        }
+    }
+
+    const game = new Game();
+</script>
+</body>
+</html>
