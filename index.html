@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Blackjack Rogue: Inline Joker Sell Button</title>
+    <title>Blackjack Rogue: Themed Jokers</title>
     <style>
         :root {
             --bg-color: #2c3e50;
@@ -85,7 +85,7 @@
         .joker-card {
             width: 70px;
             height: 95px;
-            background: linear-gradient(135deg, var(--gold), #d4ac0d);
+            /* Общий золотой фон удален, теперь управляется темой */
             color: #000;
             border-radius: 6px;
             display: flex;
@@ -99,8 +99,64 @@
             cursor: pointer;
             transition: border-color 0.2s, box-shadow 0.2s;
             position: relative; 
+            /* Базовый дизайн */
+            background: linear-gradient(135deg, #f1c40f, #d4ac0d); 
         }
         
+        /* --- ИНДИВИДУАЛЬНЫЕ ТЕМЫ ДЖОКЕРОВ --- */
+        
+        /* Четный / Нечетный */
+        .joker-card.theme-evener { background: linear-gradient(135deg, #3498db, #2980b9); color: white; border-color: #fff; }
+        .joker-card.theme-odder { background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; border-color: #fff; }
+
+        /* Красные / Черные */
+        .joker-card.theme-red-baron { background: linear-gradient(135deg, #c0392b, #e74c3c); color: white; border-color: #fff; }
+        .joker-card.theme-dark-knight { background: linear-gradient(135deg, #34495e, #2c3e50); color: #ecf0f1; border-color: #fff; }
+        
+        /* Лицевые карты */
+        .joker-card.theme-face-master { 
+            background: radial-gradient(circle, #f39c12, #d4ac0d); 
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.8);
+        }
+
+        /* Цифры */
+        .joker-card.theme-lucky-seven { 
+            background: #2ecc71; 
+            border: 3px solid white;
+        }
+        .joker-card.theme-safe-play { 
+            background: #f1c40f; 
+            border: 2px solid #27ae60;
+        }
+        
+        /* Бонусы */
+        .joker-card.theme-blackjack-pro { 
+            background: #1abc9c; 
+            color: white; 
+            border: 3px dashed white; 
+        }
+        .joker-card.theme-pair-bonus { 
+            background: linear-gradient(45deg, #e67e22, #d35400); 
+            color: white;
+        }
+        .joker-card.theme-starter { 
+            background: #bdc3c7; 
+            color: #2c3e50;
+        }
+
+        /* Стили текста для тем, где фон темный */
+        .joker-card.theme-evener .joker-name,
+        .joker-card.theme-odder .joker-name,
+        .joker-card.theme-red-baron .joker-name,
+        .joker-card.theme-dark-knight .joker-name,
+        .joker-card.theme-blackjack-pro .joker-name,
+        .joker-card.theme-pair-bonus .joker-name,
+        .joker-card.theme-lucky-seven .joker-name {
+            color: white;
+        }
+        .joker-card.theme-starter .joker-name { color: #2c3e50; }
+
+
         /* Кнопка продажи под джокером */
         .joker-sell-btn {
             background: #c0392b;
@@ -143,7 +199,7 @@
         .joker-name { font-weight: bold; font-size: 0.7rem; margin-bottom: 5px; line-height: 1; }
         .joker-desc { font-size: 0.6rem; line-height: 1.1; }
 
-        /* --- Play Area --- */
+        /* --- Остальные стили (без изменений) --- */
         #table-area {
             flex-grow: 1;
             display: flex;
@@ -263,7 +319,6 @@
         }
 
         #shop-jokers-area .joker-card-wrapper {
-             /* Сбрасываем трансформацию, чтобы они ровно стояли в магазине */
             transform: none !important; 
         }
 
@@ -369,17 +424,18 @@
     const SUITS = ['♠', '♥', '♦', '♣'];
     const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
+    // ОБНОВЛЕННЫЙ JOKER_DB с полем 'theme'
     const JOKER_DB = [
-        { id: 'evener', name: 'Четный', desc: '+10 Множитель если все карты четные', price: 4 },
-        { id: 'odder', name: 'Нечетный', desc: '+10 Множитель если все карты нечетные', price: 4 },
-        { id: 'red_baron', name: 'Красный Барон', desc: '+3 Множитель за каждую Красную', price: 6 },
-        { id: 'dark_knight', name: 'Рыцарь Тьмы', desc: '+3 Множитель за каждую Черную', price: 6 },
-        { id: 'face_master', name: 'Лицедей', desc: 'x2 Множитель если есть J, Q или K', price: 8 },
-        { id: 'lucky_seven', name: 'Счастливая 7', desc: '+15 Множитель если есть Семерка', price: 5 },
-        { id: 'safe_play', name: 'Сейв', desc: '+8 Множитель если сумма карт < 15', price: 4 },
-        { id: 'blackjack_pro', name: 'Профи 21', desc: 'x3 Множитель если сумма ровно 21', price: 10 },
-        { id: 'pair_bonus', name: 'Парочка', desc: '+5 Множитель если есть пара', price: 5 },
-        { id: 'starter', name: 'Новичок', desc: '+4 Множитель пассивно', price: 2 }
+        { id: 'evener', name: 'Четный', desc: '+10 Множитель если все карты четные', price: 4, theme: 'evener' },
+        { id: 'odder', name: 'Нечетный', desc: '+10 Множитель если все карты нечетные', price: 4, theme: 'odder' },
+        { id: 'red_baron', name: 'Красный Барон', desc: '+3 Множитель за каждую Красную', price: 6, theme: 'red-baron' },
+        { id: 'dark_knight', name: 'Рыцарь Тьмы', desc: '+3 Множитель за каждую Черную', price: 6, theme: 'dark-knight' },
+        { id: 'face_master', name: 'Лицедей', desc: 'x2 Множитель если есть J, Q или K', price: 8, theme: 'face-master' },
+        { id: 'lucky_seven', name: 'Счастливая 7', desc: '+15 Множитель если есть Семерка', price: 5, theme: 'lucky-seven' },
+        { id: 'safe_play', name: 'Сейв', desc: '+8 Множитель если сумма карт < 15', price: 4, theme: 'safe-play' },
+        { id: 'blackjack_pro', name: 'Профи 21', desc: 'x3 Множитель если сумма ровно 21', price: 10, theme: 'blackjack-pro' },
+        { id: 'pair_bonus', name: 'Парочка', desc: '+5 Множитель если есть пара', price: 5, theme: 'pair-bonus' },
+        { id: 'starter', name: 'Новичок', desc: '+4 Множитель пассивно', price: 2, theme: 'starter' }
     ];
 
     class Card {
@@ -416,7 +472,7 @@
             this.currentRoundScore = 0;
             this.draggedJokerIndex = null;
             this.selectedJokerIndex = null;
-            this.inShopMode = false;
+            this.inShopMode = false; 
 
             this.ui = {
                 cards: document.getElementById('cards-container'),
@@ -437,25 +493,21 @@
                 goShopBtn: document.getElementById('go-shop-btn'),
                 hitBtn: document.querySelector('.btn-hit'),
                 standBtn: document.querySelector('.btn-stand'),
-                // sellControl: document.getElementById('sell-control'), // Удалено
-                // sellPriceDisplay: document.getElementById('sell-price-display') // Удалено
             };
 
             this.initDeck();
             this.renderJokers();
             this.startRound();
 
-            // Обработчик для снятия выделения, если кликнули вне джокера
             document.addEventListener('click', (e) => {
                 const isJoker = e.target.closest('.joker-card-wrapper');
-                // Кликнули вне джокеров и что-то было выбрано
                 if (!isJoker && this.selectedJokerIndex !== null) {
                     this.unselectJoker();
                 }
             });
         }
         
-        // --- Game Logic (сокращены, так как они не менялись) ---
+        // --- Game Logic (без изменений) ---
 
         initDeck() {
             this.deck = [];
@@ -601,13 +653,12 @@
         /* --- JOKER INTERACTION --- */
 
         selectJoker(index) {
-            // Если выбран тот же джокер, то отменяем выбор
             if (this.selectedJokerIndex === index) {
                 this.unselectJoker();
                 return;
             }
 
-            this.unselectJoker(); // Снимаем выделение с предыдущего
+            this.unselectJoker(); 
             this.selectedJokerIndex = index;
             
             const container = this.inShopMode ? this.ui.shopJokers : this.ui.jokers;
@@ -616,7 +667,6 @@
             if (jokerWrapper) {
                 jokerWrapper.classList.add('selected-joker');
                 
-                // Обновляем текст на кнопке продажи
                 const joker = this.jokers[index];
                 const sellPrice = Math.floor(joker.price / 2);
                 const sellBtn = jokerWrapper.querySelector('.joker-sell-btn');
@@ -637,7 +687,6 @@
         }
 
         sellSelectedJoker(event) {
-            // Предотвращаем клик, который может попасть на unselectJoker
             event.stopPropagation();
             
             if (this.selectedJokerIndex !== null) {
@@ -651,7 +700,6 @@
             this.money += sellPrice;
             this.jokers.splice(index, 1);
             
-            // Перерисовка
             if (this.inShopMode) {
                 this.renderShopJokerArea();
             } else {
@@ -663,7 +711,7 @@
             this.render(); 
         }
         
-        // --- Drag and Drop (Только для игрового режима) ---
+        // --- Drag and Drop (Только для игрового режима, без изменений) ---
         
         handleDragStart(event, index) {
             if (this.inShopMode) return; 
@@ -735,7 +783,6 @@
             }
 
             this.jokers.forEach((j, index) => {
-                // В магазине перетаскивание отключено (draggable=false)
                 const div = this._createJokerCardElement(j, index, false); 
                 this.ui.shopJokers.appendChild(div);
             });
@@ -746,16 +793,13 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'joker-card-wrapper';
             
-            // Если этот джокер был выбран, восстанавливаем класс
             if (this.selectedJokerIndex === index) {
                 wrapper.classList.add('selected-joker');
             }
             
-            // Настройка для Drag and Drop
             wrapper.setAttribute('draggable', isDraggable ? 'true' : 'false');
             wrapper.setAttribute('data-index', index);
             
-            // Обработчики на обертке
             wrapper.onclick = (e) => {
                 e.stopPropagation(); 
                 this.selectJoker(index);
@@ -768,9 +812,9 @@
                 wrapper.ondragend = (e) => this.handleDragEnd(e);
             }
             
-            // Создание самой карты
+            // Создание самой карты с добавлением класса темы
             const card = document.createElement('div');
-            card.className = 'joker-card';
+            card.className = `joker-card theme-${joker.theme}`;
             card.innerHTML = `
                 <div class="joker-name">${joker.name}</div>
                 <div class="joker-desc">${joker.desc}</div>
@@ -781,7 +825,7 @@
             const sellBtn = document.createElement('button');
             sellBtn.className = 'joker-sell-btn';
             sellBtn.innerHTML = `ПРОДАТЬ $${sellPrice}`;
-            sellBtn.onclick = (e) => this.sellSelectedJoker(e); // Вызываем продажу при клике
+            sellBtn.onclick = (e) => this.sellSelectedJoker(e); 
 
             wrapper.appendChild(card);
             wrapper.appendChild(sellBtn);
@@ -790,7 +834,7 @@
         }
 
 
-        /* --- SHOP MANAGEMENT --- */
+        /* --- SHOP MANAGEMENT (без изменений) --- */
 
         openShop() {
             this.inShopMode = true;
