@@ -356,7 +356,7 @@
             </div>
             <div class="stat-box">
                 <span class="stat-label">Руки</span>
-                <span class="stat-value" id="hands-left">4</span>
+                <span class="stat-value" id="hands-left">3</span>
             </div>
         </div>
         
@@ -467,7 +467,7 @@
             this.jokers = [];
             this.round = 1;
             this.targetScore = 50; 
-            this.handsLeft = 4;
+            this.handsLeft = 3;
             this.money = 0;
             this.currentRoundScore = 0;
             this.draggedJokerIndex = null;
@@ -528,7 +528,7 @@
 
         startRound() {
             this.currentRoundScore = 0;
-            this.handsLeft = 4;
+            this.handsLeft = 3;
             this.unselectJoker();
             this.updateUI();
             this.resetHand();
@@ -579,8 +579,23 @@
                 if (j.id === 'face_master' && this.hand.some(c => ['J','Q','K'].includes(c.rank))) mult *= 2;
                 if (j.id === 'blackjack_pro' && sum === 21) mult *= 3;
             });
+            // Предварительный расчет очков
+            let total = sum * mult;
+            let finalMultiplier = 1;
 
-            return { chips: sum, mult: mult, total: sum * mult };
+            // 2. Проверка на Натуральный Блэкджек (1.5x)
+            // Условие: ровно две карты, сумма 21 (Туз + карта стоимостью 10)
+            if (this.hand.length === 2 && sum === 21) {
+                finalMultiplier *= 1.5;
+                // Оповещение игрока
+                this.ui.msg.innerText = "BLACKJACK! (x1.5)";
+                this.ui.msg.style.color = 'var(--gold)';
+            }
+
+            // 3. Применение итогового множителя
+            total = Math.floor(total * finalMultiplier); 
+
+            return { chips: sum, mult: mult, total: total };
         }
 
         render() {
